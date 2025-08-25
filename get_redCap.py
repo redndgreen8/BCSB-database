@@ -1,0 +1,60 @@
+import pymssql
+from getpass import getpass
+import csv
+from datetime import datetime
+
+
+#The host.ip.address is the ip of the host server. The dba group in your organization should know this. 
+#The username has to be preceded with the 'DEFAULT_REALM\\' from Microsoft SQL Server for Mac users. You should be able to get this from the dba group in your organization as well. 
+#The username and password will be the same as your Windows/Okta username and password. 
+#The database is just the database name you want to connect to. 
+
+ppass = getpass("Enter your database password: ")
+
+
+#add host user database
+conn = pymssql.connect(host=, user = , password = ppass, database=)
+
+cursor = conn.cursor()
+
+
+query = """
+SELECT bcsbusername, currentstaddr1, currentstaddr2, currentcity, currentstate, currentzip, dateconsentsignedbypt, dateconsentsignedbypt_v2, dateconsentsignedbypt_v2_v3, breastcancerdiagdate, currentstaddr1_sp, currentstaddr2_sp, currentcity_sp, currentstate_sp, currentzip_sp, dateconsentsignedbypt_v2sp, breastcancerdiagdate_sp
+FROM RedCapData
+WHERE NOT (
+    currentstaddr1 IS NULL AND
+    currentstaddr2 IS NULL AND
+    currentcity IS NULL AND
+    currentstate IS NULL AND
+    currentzip IS NULL AND
+    dateconsentsignedbypt IS NULL AND
+    dateconsentsignedbypt_v2 IS NULL AND
+    dateconsentsignedbypt_v2_v3 IS NULL AND
+    breastcancerdiagdate IS NULL AND
+    currentstaddr1_sp IS NULL AND
+    currentstaddr2_sp IS NULL AND
+    currentcity_sp IS NULL AND
+    currentstate_sp IS NULL AND
+    currentzip_sp IS NULL AND
+    dateconsentsignedbypt_v2sp IS NULL AND
+    breastcancerdiagdate_sp IS NULL
+);
+"""
+
+current_date = datetime.now().strftime("%Y%m%d")
+
+output_path = f'RedCapOut_residence_demog_{current_date}.csv'
+
+
+cursor.execute(query)
+
+with open(output_path, mode='w', newline='') as file:
+    writer = csv.writer(file)
+    writer.writerow([i[0] for i in cursor.description])
+
+    # Write the data rows
+    for row in cursor:
+        writer.writerow(row)
+
+cursor.close()
+conn.close()
